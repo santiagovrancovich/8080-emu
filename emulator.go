@@ -18,7 +18,7 @@ type CpuState struct {
 	RegL      uint8
 	SP        uint16
 	PC        uint16
-	Memory    *uint8
+	Memory    []uint16
 	IntEnable bool
 	Condition CpuFlags
 }
@@ -32,8 +32,33 @@ func bitParity(byte uint16) bool {
 	return acc%2 == 1
 }
 
-func AddInstruction(state *CpuState, register *uint8) {
+func Add(state *CpuState, register *uint8) {
 	var answer uint16 = uint16(state.RegA) + uint16(*register)
+
+	// Cpu Flags
+	state.Condition.Zero = ((answer & 0xff) == 0)
+	state.Condition.Sign = ((answer & 0x80) != 0)
+	state.Condition.Carry = (answer > 0xff)
+	state.Condition.Parity = bitParity(answer & 0xff)
+
+	state.RegA = uint8(answer & 0xff)
+}
+
+func AddImmediate(state *CpuState, value uint8) {
+	var answer uint16 = uint16(state.RegA) + uint16(value)
+
+	// Cpu Flags
+	state.Condition.Zero = ((answer & 0xff) == 0)
+	state.Condition.Sign = ((answer & 0x80) != 0)
+	state.Condition.Carry = (answer > 0xff)
+	state.Condition.Parity = bitParity(answer & 0xff)
+
+	state.RegA = uint8(answer & 0xff)
+}
+
+func AddMemory(state *CpuState) {
+	var addr uint16 = uint16((state.RegH << 8) | state.RegL)
+	var answer uint16 = uint16(state.RegA) + uint16(state.Memory[addr])
 
 	// Cpu Flags
 	state.Condition.Zero = ((answer & 0xff) == 0)
