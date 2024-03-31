@@ -32,8 +32,8 @@ func bitParity(byte uint16) bool {
 	return acc%2 == 1
 }
 
-func AddInstruction(state *CpuState) {
-	var answer uint16 = uint16(state.RegA) + uint16(state.RegB)
+func AddInstruction(state *CpuState, register *uint8) {
+	var answer uint16 = uint16(state.RegA) + uint16(*register)
 
 	// Cpu Flags
 	state.Condition.Zero = ((answer & 0xff) == 0)
