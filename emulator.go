@@ -5,7 +5,7 @@ type CpuFlags struct {
 	Zero     bool
 	Sign     bool
 	Carry    bool
-	AuxCarry uint8
+	AuxCarry bool
 }
 
 type CpuState struct {
@@ -23,6 +23,8 @@ type CpuState struct {
 	Condition CpuFlags
 }
 
+type Operator func(a uint16, b uint16) uint16
+
 func bitParity(byte uint16) bool {
 	var acc uint16 = 0
 	for i := range 8 {
@@ -32,39 +34,33 @@ func bitParity(byte uint16) bool {
 	return acc%2 == 1
 }
 
-func Add(state *CpuState, register *uint8) {
-	var answer uint16 = uint16(state.RegA) + uint16(*register)
+func AritmethicOperation(state *CpuState, value uint8, useCarry bool, op Operator) {
+	var answer uint16 = op(uint16(state.RegA), uint16(value))
+
+	if state.Condition.Carry && useCarry {
+		answer = op(answer, 1)
+	}
 
 	// Cpu Flags
 	state.Condition.Zero = ((answer & 0xff) == 0)
 	state.Condition.Sign = ((answer & 0x80) != 0)
 	state.Condition.Carry = (answer > 0xff)
 	state.Condition.Parity = bitParity(answer & 0xff)
+	state.Condition.AuxCarry = (((state.RegA & value) & 0x04) == 0x04)
 
-	state.RegA = uint8(answer & 0xff)
+	state.RegA = uint8(answer)
+	state.PC++
 }
 
-func AddImmediate(state *CpuState, value uint8) {
-	var answer uint16 = uint16(state.RegA) + uint16(value)
+func LogicalOperation(state *CpuState, value uint8, useCarry bool, op Operator) {
+	var answer uint16 = op(uint16(state.RegA), uint16(value))
 
 	// Cpu Flags
-	state.Condition.Zero = ((answer & 0xff) == 0)
+	state.Condition.Zero = (answer == 0)
 	state.Condition.Sign = ((answer & 0x80) != 0)
-	state.Condition.Carry = (answer > 0xff)
+	state.Condition.Carry = false
 	state.Condition.Parity = bitParity(answer & 0xff)
 
-	state.RegA = uint8(answer & 0xff)
-}
-
-func AddMemory(state *CpuState) {
-	var addr uint16 = uint16((state.RegH << 8) | state.RegL)
-	var answer uint16 = uint16(state.RegA) + uint16(state.Memory[addr])
-
-	// Cpu Flags
-	state.Condition.Zero = ((answer & 0xff) == 0)
-	state.Condition.Sign = ((answer & 0x80) != 0)
-	state.Condition.Carry = (answer > 0xff)
-	state.Condition.Parity = bitParity(answer & 0xff)
-
-	state.RegA = uint8(answer & 0xff)
+	state.RegA = uint8(answer)
+	state.PC++
 }
