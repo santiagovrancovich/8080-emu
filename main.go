@@ -14,9 +14,12 @@ func main() {
 		log.Fatal("Mate you fucked")
 	}
 
-	var CpuState = CpuState{}
+	var CpuState = CpuState{Memory: buff}
 
-	for pc := 0; pc < len(buff); pc++ {
-		UpdateState(&CpuState, buff[pc])
+	for ; int(CpuState.PC) < len(buff); CpuState.PC++ {
+		UpdateState(&CpuState, buff[CpuState.PC])
 	}
+
+	CpuState.Memory = make([]byte, 0)
+	fmt.Printf("%+v\n", CpuState)
 }
