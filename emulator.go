@@ -18,7 +18,7 @@ type CpuState struct {
 	RegL      uint8
 	SP        uint16
 	PC        uint16
-	Memory    []uint16
+	Memory    []byte
 	IntEnable bool
 	Condition CpuFlags
 }
@@ -49,10 +49,9 @@ func AritmethicOperation(state *CpuState, value uint8, useCarry bool, op Operato
 	state.Condition.AuxCarry = (((state.RegA & value) & 0x04) == 0x04)
 
 	state.RegA = uint8(answer)
-	state.PC++
 }
 
-func LogicalOperation(state *CpuState, value uint8, useCarry bool, op Operator) {
+func LogicalOperation(state *CpuState, value uint8, op Operator) {
 	var answer uint16 = op(uint16(state.RegA), uint16(value))
 
 	// Cpu Flags
@@ -62,5 +61,4 @@ func LogicalOperation(state *CpuState, value uint8, useCarry bool, op Operator) 
 	state.Condition.Parity = bitParity(answer & 0xff)
 
 	state.RegA = uint8(answer)
-	state.PC++
 }
