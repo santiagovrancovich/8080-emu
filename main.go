@@ -8,7 +8,12 @@ import (
 
 func main() {
 	fmt.Println("Hello there")
-	buff, err := os.ReadFile("invaders.h")
+
+	if len(os.Args) < 2 {
+		log.Fatal("Mate you fucked")
+	}
+
+	buff, err := os.ReadFile(os.Args[1])
 
 	if err != nil {
 		log.Fatal("Mate you fucked")
