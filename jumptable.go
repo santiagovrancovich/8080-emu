@@ -11,25 +11,25 @@ var Registers = []string{"B", "C", "D", "E", "H", "L", "M", "A"}
 var RegisterPair = []string{"BC", "DE", "HL", "SP"}
 var Conditions = []string{"NZ", "Z", "NC", "C", "PO", "PE", "P", "M"}
 
-func getRegisterVal(state *CpuState, reg byte) uint8 {
+func getRegisterVal(state *CpuState, reg byte) *uint8 {
 	switch reg {
 	case 0:
-		return state.RegB
+		return &state.RegB
 	case 1:
-		return state.RegC
+		return &state.RegC
 	case 2:
-		return state.RegD
+		return &state.RegD
 	case 3:
-		return state.RegE
+		return &state.RegE
 	case 4:
-		return state.RegH
+		return &state.RegH
 	case 5:
-		return state.RegL
+		return &state.RegL
 	case 6:
 		addr := (uint16(state.RegH) << 8) | uint16(state.RegL)
-		return uint8(state.Memory[addr])
+		return &state.Memory[addr]
 	default:
-		return state.RegA
+		return &state.RegA
 	}
 }
 
@@ -64,30 +64,46 @@ func UpdateState(state *CpuState, op byte) {
 		LogicalOperation(state, state.Memory[state.PC+1],
 			func(a, b uint16) uint16 { return a | b })
 		state.PC += 1
+	case 0xf9:
+		state.SP = uint16(state.RegL)<<8 | uint16(state.RegH)
 	}
 
 	switch {
 	case 0x80 <= op && op <= 0x87:
-		AritmethicOperation(state, getRegisterVal(state, op&0x7), false,
+		AritmethicOperation(state, *getRegisterVal(state, op&0x7), false,
 			func(a, b uint16) uint16 { return a + b })
 	case 0x88 <= op && op <= 0x8f:
-		AritmethicOperation(state, getRegisterVal(state, op&0x7), true,
+		AritmethicOperation(state, *getRegisterVal(state, op&0x7), true,
 			func(a, b uint16) uint16 { return a + b })
 	case 0x90 <= op && op <= 0x97:
-		AritmethicOperation(state, getRegisterVal(state, op&0x7), false,
+		AritmethicOperation(state, *getRegisterVal(state, op&0x7), false,
 			func(a, b uint16) uint16 { return a - b })
 	case 0x98 <= op && op <= 0x9f:
-		AritmethicOperation(state, getRegisterVal(state, op&0x7), true,
+		AritmethicOperation(state, *getRegisterVal(state, op&0x7), true,
 			func(a, b uint16) uint16 { return a - b })
 	case 0xa0 <= op && op <= 0xa7:
-		LogicalOperation(state, getRegisterVal(state, op&0x07),
+		LogicalOperation(state, *getRegisterVal(state, op&0x07),
 			func(a, b uint16) uint16 { return a & b })
 	case 0xa8 <= op && op <= 0xaf:
-		LogicalOperation(state, getRegisterVal(state, op&0x07),
+		LogicalOperation(state, *getRegisterVal(state, op&0x07),
 			func(a, b uint16) uint16 { return a ^ b })
 	case 0xb0 <= op && op <= 0xb7:
-		LogicalOperation(state, getRegisterVal(state, op&0x07),
+		LogicalOperation(state, *getRegisterVal(state, op&0x07),
 			func(a, b uint16) uint16 { return a | b })
+	case (op^0xce)|0x30 == 0xff:
+		if op>>4 == 3 {
+			state.SP = uint16(state.Memory[state.PC+1])<<8 | uint16(state.Memory[state.PC+2])
+		} else {
+			lb := getRegisterVal(state, (op>>4)*2)
+			hb := getRegisterVal(state, ((op>>4)*2)+1)
+			*lb = state.Memory[state.PC+1]
+			*hb = state.Memory[state.PC+2]
+		}
+		state.PC += 2
+	case (op^0xc1)|0x38 == 0xff:
+		reg := getRegisterVal(state, op>>3)
+		*reg = state.Memory[state.PC+1]
+		state.PC += 1
 	}
 }
 
