@@ -66,6 +66,9 @@ func UpdateState(state *CpuState, op byte) {
 		state.PC += 1
 	case 0xf9:
 		state.SP = uint16(state.RegL)<<8 | uint16(state.RegH)
+	case 0xfe:
+		CompareOperation(state, state.Memory[state.PC+1])
+		state.PC += 1
 	}
 
 	switch {
@@ -90,6 +93,8 @@ func UpdateState(state *CpuState, op byte) {
 	case 0xb0 <= op && op <= 0xb7:
 		LogicalOperation(state, *getRegisterVal(state, op&0x07),
 			func(a, b uint16) uint16 { return a | b })
+	case op&0xb8 == 0xb8:
+		CompareOperation(state, *getRegisterVal(state, op&0x07))
 	case (op^0xce)|0x30 == 0xff:
 		if op>>4 == 3 {
 			state.SP = uint16(state.Memory[state.PC+1])<<8 | uint16(state.Memory[state.PC+2])
@@ -104,6 +109,10 @@ func UpdateState(state *CpuState, op byte) {
 		reg := getRegisterVal(state, op>>3)
 		*reg = state.Memory[state.PC+1]
 		state.PC += 1
+	case op&0x40 == 0x40:
+		dst := getRegisterVal(state, (op&0x3f)>>3)
+		src := getRegisterVal(state, op&0x07)
+		*dst = *src
 	}
 }
 

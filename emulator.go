@@ -27,11 +27,11 @@ type Operator func(a uint16, b uint16) uint16
 
 func bitParity(byte uint16) bool {
 	var acc uint16 = 0
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		acc += (byte >> i) & 0x01
 	}
 
-	return acc%2 == 1
+	return acc%2 == 0
 }
 
 func AritmethicOperation(state *CpuState, value uint8, useCarry bool, op Operator) {
@@ -61,4 +61,15 @@ func LogicalOperation(state *CpuState, value uint8, op Operator) {
 	state.Condition.Parity = bitParity(answer & 0xff)
 
 	state.RegA = uint8(answer)
+}
+
+func CompareOperation(state *CpuState, value uint8) {
+	var answer uint16 = uint16(state.RegA) - uint16(value)
+
+	// Cpu Flags
+	state.Condition.Zero = ((answer & 0xff) == 0)
+	state.Condition.Sign = ((answer & 0x80) != 0)
+	state.Condition.Carry = (answer > 0xff)
+	state.Condition.Parity = bitParity(answer & 0xff)
+	state.Condition.AuxCarry = (((state.RegA & value) & 0x04) == 0x04)
 }
