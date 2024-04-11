@@ -36,6 +36,8 @@ func getRegisterVal(state *CpuState, reg byte) *uint8 {
 // implementation pending
 func UpdateState(state *CpuState, op byte) {
 	switch op {
+	case 0x76:
+		state.PC = uint16(len(state.Memory)) + 1
 	case 0xc6:
 		AritmethicOperation(state, state.Memory[state.PC+1], false,
 			func(a, b uint16) uint16 { return a + b })
