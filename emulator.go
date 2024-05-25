@@ -73,3 +73,32 @@ func CompareOperation(state *CpuState, value uint8) {
 	state.Condition.Parity = bitParity(answer & 0xff)
 	state.Condition.AuxCarry = (((state.RegA & value) & 0x04) == 0x04)
 }
+
+func JumpOperation(state *CpuState, op byte) {
+	var answer bool
+
+	switch (op & 0x38) >> 3 {
+	case 0:
+		answer = state.Condition.Zero
+	case 1:
+		answer = !state.Condition.Zero
+	case 2:
+		answer = !state.Condition.Carry
+	case 3:
+		answer = state.Condition.Carry
+	case 4:
+		answer = !bitParity(uint16(op))
+	case 5:
+		answer = bitParity(uint16(op))
+	case 6:
+		answer = !state.Condition.Sign
+	case 7:
+		answer = state.Condition.Sign
+	}
+
+	if answer {
+		state.PC = uint16(state.Memory[state.PC+2])<<8 | uint16(state.Memory[state.PC+1]) - 1
+	} else {
+		state.PC += 2
+	}
+}

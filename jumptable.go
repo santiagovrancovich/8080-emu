@@ -111,10 +111,16 @@ func UpdateState(state *CpuState, op byte) {
 		reg := getRegisterVal(state, op>>3)
 		*reg = state.Memory[state.PC+1]
 		state.PC += 1
-	case op&0x40 == 0x40:
+	case op>>6 == 0x1:
 		dst := getRegisterVal(state, (op&0x3f)>>3)
 		src := getRegisterVal(state, op&0x07)
 		*dst = *src
+	case op&0xc2 == 0xc2:
+		if op&0x01 == 0x01 {
+			state.PC = uint16(state.Memory[state.PC+2])<<8 | uint16(state.Memory[state.PC+1]) - 1
+		} else {
+			JumpOperation(state, op)
+		}
 	}
 }
 

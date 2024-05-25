@@ -22,6 +22,7 @@ func main() {
 	var CpuState = CpuState{Memory: buff}
 
 	for ; int(CpuState.PC) < len(buff); CpuState.PC++ {
+		fmt.Printf("0x%x\n", CpuState.RegA)
 		UpdateState(&CpuState, buff[CpuState.PC])
 	}
 
